@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
@@ -11,11 +10,8 @@ import toast from "react-hot-toast";
 const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
   const [messages, setMessages] = useState([]);
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);
-  const messageEndRef = useRef(null);
   const [isTyping, setIsTyping] = useState(false);
-console.log(selectedUser,"selectedUser")
-
-
+  const messageEndRef = useRef(null);
 
   const getMessages = async (userId) => {
     setIsMessagesLoading(true);
@@ -51,29 +47,58 @@ console.log(selectedUser,"selectedUser")
     }
   }, [messages]);
 
+  // ✅ NEW: Typing status socket listeners
+useEffect(() => {
+  const socket = getSocket();
+  if (!socket || !selectedUser) return;
+
+  const handleTyping = ({ senderId }) => {
+    console.log("👀 Received typing from:", senderId);
+    if (senderId === selectedUser._id) {
+      setIsTyping(true);
+    }
+  };
+
+  const handleStopTyping = ({ senderId }) => {
+    console.log("👀 Received stopTyping from:", senderId);
+    if (senderId === selectedUser._id) {
+      setIsTyping(false);
+    }
+  };
+
+  socket.on("typing", handleTyping);
+  socket.on("stopTyping", handleStopTyping);
+
+  return () => {
+    socket.off("typing", handleTyping);
+    socket.off("stopTyping", handleStopTyping);
+  };
+}, [selectedUser]);
   if (isMessagesLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">
-     <ChatHeader
-  selectedUser={selectedUser}
-  setSelectedUser={setSelectedUser}
-  onlineUsers={onlineUsers}
-/>        <MessageSkeleton />
-<MessageInput
-  authUser={authUser}
-  selectedUser={selectedUser}
-  setMessages={setMessages}
-/>
+        <ChatHeader
+          selectedUser={selectedUser}
+          setSelectedUser={setSelectedUser}
+          onlineUsers={onlineUsers}
+        />
+        <MessageSkeleton />
+        <MessageInput
+          authUser={authUser}
+          selectedUser={selectedUser}
+          setMessages={setMessages}
+        />
       </div>
     );
   }
+
   return (
     <div className="flex-1 flex flex-col overflow-auto">
-     <ChatHeader
-  selectedUser={selectedUser}
-  setSelectedUser={setSelectedUser}
-  onlineUsers={onlineUsers}
-/>
+      <ChatHeader
+        selectedUser={selectedUser}
+        setSelectedUser={setSelectedUser}
+        onlineUsers={onlineUsers}
+      />
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div
@@ -110,18 +135,19 @@ console.log(selectedUser,"selectedUser")
             </div>
           </div>
         ))}
-         {isTyping && (
-    <div className="text-sm italic text-base-content/60 px-2">
-      {selectedUser.fullName} is typing...
-    </div>
-  )}
+        {isTyping && (
+          <div className="text-sm italic text-base-content/60 px-2">
+            {selectedUser.fullName} is typing...
+          </div>
+        )}
       </div>
 
-<MessageInput
-  authUser={authUser}
-  selectedUser={selectedUser}
-  setMessages={setMessages}
-/>    </div>
+      <MessageInput
+        authUser={authUser}
+        selectedUser={selectedUser}
+        setMessages={setMessages}
+      />
+    </div>
   );
 };
 

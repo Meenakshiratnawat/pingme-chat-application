@@ -21,7 +21,6 @@ export function getReceiverSocketId(userId) {
 const userSocketMap = {}; // {userId: socketId}
 
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
   if (userId) userSocketMap[userId] = socket.id;
@@ -30,23 +29,24 @@ io.on("connection", (socket) => {
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("disconnect", () => {
-    console.log("A user disconnected", socket.id);
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 
 socket.on("typing", ({ senderId, receiverId }) => {
-    console.log("📨 typing from", senderId, "to", receiverId);
-
+  console.log(`📨 Server received typing from ${senderId} → ${receiverId}`);
   const receiverSocketId = getReceiverSocketId(receiverId);
   if (receiverSocketId) {
+    console.log(`📤 Forwarding typing to socket: ${receiverSocketId}`);
     io.to(receiverSocketId).emit("typing", { senderId });
   }
 });
 
 socket.on("stopTyping", ({ senderId, receiverId }) => {
+  console.log(`📨 Server received stopTyping from ${senderId} → ${receiverId}`);
   const receiverSocketId = getReceiverSocketId(receiverId);
   if (receiverSocketId) {
+    console.log(`📤 Forwarding stopTyping to socket: ${receiverSocketId}`);
     io.to(receiverSocketId).emit("stopTyping", { senderId });
   }
 });
