@@ -43,21 +43,23 @@ export const sendMessage = async (req, res) => {
 
     let imageUrl;
     if (image) {
-      // Upload base64 image to cloudinary
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
     }
+
+    const receiverSocketId = getReceiverSocketId(receiverId);
 
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
       image: imageUrl,
+      status: receiverSocketId ? "delivered" : "sent" 
     });
 
     await newMessage.save();
 
-    const receiverSocketId = getReceiverSocketId(receiverId);
+    // Notify receiver if online
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
@@ -67,4 +69,47 @@ export const sendMessage = async (req, res) => {
     console.log("Error in sendMessage controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
+};
+
+export const deleteMessage = async (req, res) => {
+  const message = await Message.findById(req.params.id);
+
+  if (!message) return res.status(404).json({ message: "Not found" });
+
+  if (message.senderId.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  if (!["sent", "delivered"].includes(message.status)) {
+    return res.status(400).json({ message: "Cannot delete this message" });
+  }
+
+  message.text = "This message was deleted";
+  message.image = null;
+  await message.save();
+
+  io.to(getReceiverSocketId(message.receiverId)).emit("message-deleted", message);
+  res.status(200).json({ message: "Deleted" });
+};
+
+
+export const editMessage = async (req, res) => {
+  const { text } = req.body;
+  const message = await Message.findById(req.params.id);
+
+  if (!message) return res.status(404).json({ message: "Not found" });
+
+  if (message.senderId.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  if (!["sent", "delivered"].includes(message.status)) {
+    return res.status(400).json({ message: "Cannot edit this message" });
+  }
+
+  message.text = text;
+  await message.save();
+
+  io.to(getReceiverSocketId(message.receiverId)).emit("message-edited", message);
+  res.status(200).json(message);
 };

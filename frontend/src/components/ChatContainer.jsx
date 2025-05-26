@@ -6,6 +6,7 @@ import { axiosInstance } from "../lib/axios";
 import { getSocket, subscribeToMessages, unsubscribeFromMessages } from "../lib/socket";
 import { formatMessageTime } from "../lib/utils";
 import toast from "react-hot-toast";
+import { Check, CheckCheck } from "lucide-react";
 
 const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
   const [messages, setMessages] = useState([]);
@@ -17,6 +18,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
     setIsMessagesLoading(true);
     try {
       const res = await axiosInstance.get(`/messages/${userId}`);
+      console.log("📥 Messages from API:", res.data);
       setMessages(res.data);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load messages");
@@ -30,15 +32,73 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
 
     getMessages(selectedUser._id);
 
-    const handleNewMessage = (newMessage) => {
-      if (newMessage.senderId === selectedUser._id || newMessage.receiverId === selectedUser._id) {
-        setMessages((prev) => [...prev, newMessage]);
-      }
+    const socket = getSocket();
+
+    // Notify server that chat is opened so it can mark as read
+    console.log("📤 Emitting chat-opened from", authUser.fullName, "to", selectedUser.fullName);
+    socket.emit("chat-opened", {
+      readerId: authUser._id,
+      senderId: selectedUser._id,
+    });
+
+ const handleNewMessage = (newMessage) => {
+  if (
+    newMessage.senderId === selectedUser._id ||
+    newMessage.receiverId === selectedUser._id
+  ) {
+    setMessages((prev) => [...prev, newMessage]);
+  }
+
+  // ✅ Re-emit chat-opened if you are the receiver
+  if (
+    newMessage.senderId === selectedUser._id && // message from selected user
+    newMessage.receiverId === authUser._id // you are the receiver
+  ) {
+    const socket = getSocket();
+    console.log("📤 Re-emitting chat-opened (chat already open)");
+    socket.emit("chat-opened", {
+      readerId: authUser._id,
+      senderId: selectedUser._id,
+    });
+  }
+};
+
+    const handleTyping = ({ senderId }) => {
+      if (senderId === selectedUser._id) setIsTyping(true);
+    };
+
+    const handleStopTyping = ({ senderId }) => {
+      if (senderId === selectedUser._id) setIsTyping(false);
+    };
+
+    const handleMessagesRead = ({ senderId, readerId }) => {
+      console.log("📩 Received messages-read:", { senderId, readerId });
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.senderId === senderId &&
+          msg.receiverId === readerId &&
+          ["sent", "delivered"].includes(msg.status)
+            ? { ...msg, status: "read" }
+            : msg
+        )
+      );
+
+      // fallback to ensure fresh state
+      getMessages(selectedUser._id);
     };
 
     subscribeToMessages(handleNewMessage);
+    socket.on("typing", handleTyping);
+    socket.on("stopTyping", handleStopTyping);
+    socket.on("messages-read", handleMessagesRead);
 
-    return () => unsubscribeFromMessages(handleNewMessage);
+    return () => {
+      unsubscribeFromMessages(handleNewMessage);
+      socket.off("typing", handleTyping);
+      socket.off("stopTyping", handleStopTyping);
+      socket.off("messages-read", handleMessagesRead);
+    };
   }, [selectedUser]);
 
   useEffect(() => {
@@ -47,106 +107,105 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
     }
   }, [messages]);
 
-  // ✅ NEW: Typing status socket listeners
-useEffect(() => {
-  const socket = getSocket();
-  if (!socket || !selectedUser) return;
+  if (!selectedUser) {
+    return (
+      <div className="flex-1 flex items-center justify-center flex-col text-center text-zinc-500">
+        <img src="/assets/chat-empty.svg" alt="Empty" className="w-40 h-40 mb-6" />
+        <h2 className="text-xl font-semibold">Welcome to Chatty 👋</h2>
+        <p className="text-sm mt-2">Select a conversation from the sidebar to start chatting.</p>
+      </div>
+    );
+  }
 
-  const handleTyping = ({ senderId }) => {
-    console.log("👀 Received typing from:", senderId);
-    if (senderId === selectedUser._id) {
-      setIsTyping(true);
-    }
-  };
-
-  const handleStopTyping = ({ senderId }) => {
-    console.log("👀 Received stopTyping from:", senderId);
-    if (senderId === selectedUser._id) {
-      setIsTyping(false);
-    }
-  };
-
-  socket.on("typing", handleTyping);
-  socket.on("stopTyping", handleStopTyping);
-
-  return () => {
-    socket.off("typing", handleTyping);
-    socket.off("stopTyping", handleStopTyping);
-  };
-}, [selectedUser]);
   if (isMessagesLoading) {
     return (
       <div className="flex-1 flex flex-col overflow-auto">
-        <ChatHeader
-          selectedUser={selectedUser}
-          setSelectedUser={setSelectedUser}
-          onlineUsers={onlineUsers}
-        />
+        <ChatHeader {...{ selectedUser, setSelectedUser, onlineUsers }} />
         <MessageSkeleton />
-        <MessageInput
-          authUser={authUser}
-          selectedUser={selectedUser}
-          setMessages={setMessages}
-        />
+        <MessageInput {...{ selectedUser, authUser, setMessages }} />
       </div>
     );
   }
 
   return (
     <div className="flex-1 flex flex-col overflow-auto">
-      <ChatHeader
-        selectedUser={selectedUser}
-        setSelectedUser={setSelectedUser}
-        onlineUsers={onlineUsers}
-      />
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message._id}
-            className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
-            ref={messageEndRef}
-          >
-            <div className="chat-image avatar">
-              <div className="size-10 rounded-full border">
+      <ChatHeader {...{ selectedUser, setSelectedUser, onlineUsers }} />
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-base-100">
+        {messages.map((message) => {
+          const isMe = message.senderId === authUser._id;
+
+          return (
+            <div
+              key={`${message._id}-${message.status}`}
+              className={`flex gap-2 items-end ${isMe ? "justify-end" : "justify-start"}`}
+              ref={messageEndRef}
+            >
+              {!isMe && (
                 <img
-                  src={
-                    message.senderId === authUser._id
-                      ? authUser.profilePic || "/avatar.png"
-                      : selectedUser.profilePic || "/avatar.png"
-                  }
-                  alt="profile pic"
-                />
-              </div>
-            </div>
-            <div className="chat-header mb-1">
-              <time className="text-xs opacity-50 ml-1">
-                {formatMessageTime(message.createdAt)}
-              </time>
-            </div>
-            <div className="chat-bubble flex flex-col">
-              {message.image && (
-                <img
-                  src={message.image}
-                  alt="Attachment"
-                  className="sm:max-w-[200px] rounded-md mb-2"
+                  src={selectedUser.profilePic || "/avatar.png"}
+                  alt="avatar"
+                  className="w-8 h-8 rounded-full border"
                 />
               )}
-              {message.text && <p>{message.text}</p>}
+
+              <div className="max-w-[80%]">
+                <div
+                  className={`rounded-xl px-4 py-2 text-sm whitespace-pre-line ${
+                    isMe
+                      ? "bg-primary text-white rounded-br-none"
+                      : "bg-base-200 text-base-content rounded-bl-none"
+                  }`}
+                >
+                  {message.image && (
+                    <img
+                      src={message.image}
+                      alt="attachment"
+                      className="mb-1 rounded-md max-w-xs"
+                    />
+                  )}
+                  {message.text && <p>{message.text}</p>}
+                </div>
+
+                {/* Ticks / Timestamps */}
+                {isMe ? (
+                  <div className="text-xs text-right mt-1 flex items-center justify-end gap-1 text-zinc-400">
+                    <span>{formatMessageTime(message.createdAt)}</span>
+                    {message.status === "sent" && <Check className="w-4 h-4" />}
+                    {message.status === "delivered" && <CheckCheck className="w-4 h-4" />}
+                    {message.status === "read" && (
+                      <CheckCheck className="w-4 h-4 text-red-600" />
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs text-zinc-400 mt-1">
+                    {formatMessageTime(message.createdAt)}
+                  </div>
+                )}
+              </div>
+
+              {isMe && (
+                <img
+                  src={authUser.profilePic || "/avatar.png"}
+                  alt="avatar"
+                  className="w-8 h-8 rounded-full border"
+                />
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
+
         {isTyping && (
-          <div className="text-sm italic text-base-content/60 px-2">
-            {selectedUser.fullName} is typing...
+          <div className="flex items-center gap-2 px-2 mt-2 text-sm text-zinc-500">
+            <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"></span>
+            <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-150"></span>
+            <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-300"></span>
+            <span className="ml-2 italic">{selectedUser.fullName} is typing...</span>
           </div>
         )}
       </div>
 
-      <MessageInput
-        authUser={authUser}
-        selectedUser={selectedUser}
-        setMessages={setMessages}
-      />
+      <MessageInput {...{ selectedUser, authUser, setMessages }} />
     </div>
   );
 };

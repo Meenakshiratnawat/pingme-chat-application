@@ -4,8 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthImagePattern from "../components/AuthImagePattern";
-import { loginApi } from "../apiServices/authApi"; 
-import { useAuthStore } from "../store/useAuthStore"; // 👈 bring back Zustand store
+import { loginApi } from "../apiServices/AuthApi.js"; 
 import { connectSocket } from "../lib/socket";
 
 
