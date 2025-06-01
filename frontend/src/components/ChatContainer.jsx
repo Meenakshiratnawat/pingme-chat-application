@@ -6,19 +6,18 @@ import { axiosInstance } from "../lib/axios";
 import { getSocket, subscribeToMessages, unsubscribeFromMessages } from "../lib/socket";
 import { formatMessageTime } from "../lib/utils";
 import toast from "react-hot-toast";
-import { Check, CheckCheck } from "lucide-react";
+import { Check, CheckCheck, MoreVertical } from "lucide-react";
 
 const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
   const [messages, setMessages] = useState([]);
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const messageEndRef = useRef(null);
-
+  const [dropdownOpenId, setDropdownOpenId] = useState(null);
   const getMessages = async (userId) => {
     setIsMessagesLoading(true);
     try {
       const res = await axiosInstance.get(`/messages/${userId}`);
-      console.log("📥 Messages from API:", res.data);
       setMessages(res.data);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load messages");
@@ -29,56 +28,51 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
 
   useEffect(() => {
     if (!selectedUser) return;
-
     getMessages(selectedUser._id);
 
     const socket = getSocket();
-
-    // Notify server that chat is opened so it can mark as read
-    console.log("📤 Emitting chat-opened from", authUser.fullName, "to", selectedUser.fullName);
     socket.emit("chat-opened", {
       readerId: authUser._id,
       senderId: selectedUser._id,
     });
 
- const handleNewMessage = (newMessage) => {
-  if (
-    newMessage.senderId === selectedUser._id ||
-    newMessage.receiverId === selectedUser._id
-  ) {
-    setMessages((prev) => [...prev, newMessage]);
-  }
+    const handleNewMessage = (newMessage) => {
+      if (
+        newMessage.senderId === selectedUser._id ||
+        newMessage.receiverId === selectedUser._id
+      ) {
+        setMessages((prev) => [...prev, newMessage]);
+      }
 
-  // ✅ Re-emit chat-opened if you are the receiver
-  if (
-    newMessage.senderId === selectedUser._id && // message from selected user
-    newMessage.receiverId === authUser._id // you are the receiver
-  ) {
-    const socket = getSocket();
-    console.log("📤 Re-emitting chat-opened (chat already open)");
-    socket.emit("chat-opened", {
-      readerId: authUser._id,
-      senderId: selectedUser._id,
-    });
-  }
-};
-
-    const handleTyping = ({ senderId }) => {
-      if (senderId === selectedUser._id) setIsTyping(true);
+      // ✅ Re-emit chat-opened if you are the receiver
+      if (
+        newMessage.senderId === selectedUser._id && // message from selected user
+        newMessage.receiverId === authUser._id // you are the receiver
+      ) {
+        const socket = getSocket();
+        console.log("📤 Re-emitting chat-opened (chat already open)");
+        socket.emit("chat-opened", {
+          readerId: authUser._id,
+          senderId: selectedUser._id,
+        });
+      }
     };
+
+    const handleTyping = ({ senderId,receiverId }) => {
+      console.log (senderId,"senderId")
+      if (senderId === selectedUser._id) setIsTyping(true);
+          };
 
     const handleStopTyping = ({ senderId }) => {
       if (senderId === selectedUser._id) setIsTyping(false);
     };
 
     const handleMessagesRead = ({ senderId, readerId }) => {
-      console.log("📩 Received messages-read:", { senderId, readerId });
-
       setMessages((prev) =>
         prev.map((msg) =>
           msg.senderId === senderId &&
-          msg.receiverId === readerId &&
-          ["sent", "delivered"].includes(msg.status)
+            msg.receiverId === readerId &&
+            ["sent", "delivered"].includes(msg.status)
             ? { ...msg, status: "read" }
             : msg
         )
@@ -100,6 +94,12 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
       socket.off("messages-read", handleMessagesRead);
     };
   }, [selectedUser]);
+
+  useEffect(() => {
+    if (isTyping && messageEndRef.current) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [isTyping]);
 
   useEffect(() => {
     if (messageEndRef.current) {
@@ -151,11 +151,10 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
 
               <div className="max-w-[80%]">
                 <div
-                  className={`rounded-xl px-4 py-2 text-sm whitespace-pre-line ${
-                    isMe
+                  className={`rounded-xl px-4 py-2 text-sm whitespace-pre-line relative ${isMe
                       ? "bg-primary text-white rounded-br-none"
                       : "bg-base-200 text-base-content rounded-bl-none"
-                  }`}
+                    }`}
                 >
                   {message.image && (
                     <img
@@ -195,14 +194,15 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
           );
         })}
 
-        {isTyping && (
-          <div className="flex items-center gap-2 px-2 mt-2 text-sm text-zinc-500">
-            <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"></span>
-            <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-150"></span>
-            <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-300"></span>
-            <span className="ml-2 italic">{selectedUser.fullName} is typing...</span>
-          </div>
-        )}
+       {isTyping && (
+  <div className="flex items-center gap-2 px-2 mt-2 text-sm text-zinc-500">
+    <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"></span>
+    <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-150"></span>
+    <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce delay-300"></span>
+    <span className="ml-2 italic">{selectedUser.fullName} is typing...</span>
+  </div>
+)}
+<div ref={messageEndRef} />
       </div>
 
       <MessageInput {...{ selectedUser, authUser, setMessages }} />

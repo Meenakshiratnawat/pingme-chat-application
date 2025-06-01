@@ -16,10 +16,11 @@ export const connectSocket = (userId, onOnlineUsers) => {
 
   socket.on("connect", () => {
     console.log("✅ Socket connected:", socket.id);
+          socket.emit("join", userId);
+
   });
 
   socket.on("getOnlineUsers", (userIds) => {
-    console.log("🟢 Online users:", userIds);
     if (typeof onOnlineUsers === "function") {
       onOnlineUsers(userIds); // 👈 call the callback you pass from component
     }

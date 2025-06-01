@@ -101,7 +101,7 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
             value={text}
             onChange={(e) => {
               setText(e.target.value);
-              handleTyping(); // 👈 trigger typing
+              handleTyping(); 
             }}
           />
           <input

@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
-import { Users, Search } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
+import { getSocket } from "../lib/socket";
 
-const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
-  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState([]);
+const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, contacts, authUser }) => {
+  const [allUsers, setAllUsers] = useState([]);
   const [isUsersLoading, setIsUsersLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch all users
   const getUsers = async () => {
     setIsUsersLoading(true);
     try {
       const res = await axiosInstance.get("/messages/users");
-      setUsers(res.data);
+      setAllUsers(res.data);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load users");
     } finally {
@@ -27,50 +26,50 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
     getUsers();
   }, []);
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase());
-    const isOnline = onlineUsers.includes(user._id);
-    return matchesSearch && (!showOnlineOnly || isOnline);
-  });
+  const handleAddUser = async (user) => {
+    const socket = getSocket();
+    if (!contacts.find((u) => u._id === user._id)) {
+      try {
+        await axiosInstance.post("/connections/send", {
+          senderId: authUser._id,
+          receiverId: user._id,
+        });
+
+        socket.emit("contact-request", {
+          senderId: authUser._id,
+          receiverId: user._id,
+          senderName: authUser.fullName,
+        });
+
+        toast.success(`Contact request sent to ${user.fullName}`);
+      } catch (err) {
+        toast.error(err?.response?.data?.message || "Failed to send request");
+      }
+    }
+  };
 
   if (isUsersLoading) return <SidebarSkeleton />;
 
   return (
     <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col">
-      {/* Header + Filter */}
-      <div className="border-b border-base-300 p-4 space-y-4">
+      {/* Header */}
+      <div className="border-b border-base-300 p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="size-5" />
           <span className="font-medium hidden lg:block">Contacts</span>
         </div>
-
-        <div className="hidden lg:flex items-center gap-2">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search..."
-            className="input input-sm input-bordered w-full text-sm"
-          />
-        </div>
-
-        <div className="hidden lg:flex items-center gap-2 text-sm text-zinc-500">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showOnlineOnly}
-              onChange={(e) => setShowOnlineOnly(e.target.checked)}
-              className="checkbox checkbox-sm"
-            />
-            Show online only
-          </label>
-          <span>({onlineUsers.length - 1} online)</span>
-        </div>
+        <button
+          className="flex items-center gap-1 text-sm text-primary border border-primary px-2 py-1 rounded hover:bg-primary hover:text-white transition-all hidden lg:flex"
+          onClick={() => setIsModalOpen(true)}
+        >
+          <Plus className="w-4 h-4" />
+          Add
+        </button>
       </div>
 
-      {/* Users List */}
+      {/* Contacts List */}
       <div className="overflow-y-auto w-full py-2 px-2">
-        {filteredUsers.map((user) => {
+        {contacts.map((user) => {
           const isSelected = selectedUser?._id === user._id;
           const isOnline = onlineUsers.includes(user._id);
 
@@ -81,7 +80,6 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
               className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all
                 ${isSelected ? "bg-base-300 ring-2 ring-base-200" : "hover:bg-base-200"}`}
             >
-              {/* Avatar with status ring */}
               <div className="relative">
                 <img
                   src={user.profilePic || "/avatar.png"}
@@ -93,7 +91,6 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
                 )}
               </div>
 
-              {/* User info */}
               <div className="hidden lg:block min-w-0">
                 <p className="font-medium truncate text-sm">{user.fullName}</p>
                 <p className="text-xs text-zinc-500">{isOnline ? "Online" : "Offline"}</p>
@@ -102,10 +99,56 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, authUser }) => {
           );
         })}
 
-        {filteredUsers.length === 0 && (
-          <div className="text-center text-zinc-500 py-4 text-sm">No users found</div>
+        {contacts.length === 0 && (
+          <div className="text-center text-zinc-500 py-4 text-sm">No contacts added</div>
         )}
       </div>
+
+      {/* Add User Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-base-100 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Add Users</h2>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {allUsers.map((user) => {
+                const isOnline = onlineUsers.includes(user._id);
+                const alreadyAdded = contacts.some((u) => u._id === user._id);
+
+                return (
+                  <div
+                    key={user._id}
+                    className="flex items-center justify-between border-b py-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={user.profilePic || "/avatar.png"}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full border"
+                      />
+                      <div>
+                        <p className="text-sm font-medium">{user.fullName}</p>
+                        <p className="text-xs text-zinc-500">{isOnline ? "Online" : "Offline"}</p>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-xs"
+                      onClick={() => handleAddUser(user)}
+                      disabled={alreadyAdded}
+                    >
+                      {alreadyAdded ? "Added" : "+ Add"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 text-right">
+              <button className="btn btn-sm btn-outline" onClick={() => setIsModalOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };
