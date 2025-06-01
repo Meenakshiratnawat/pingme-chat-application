@@ -1,18 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, MessageSquare, Settings, User, Bell } from "lucide-react";
+import { LogOut, MessageCircle, Settings, User, Bell } from "lucide-react";
 import toast from "react-hot-toast";
 import { logoutApi } from "../apiServices/AuthApi";
-import { usePendingRequestsStore } from "../store/useRequestStore";
-import { useEffect, useState } from "react";
-import { axiosInstance } from "../lib/axios";
-import { getSocket } from "../lib/socket";
 
 const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
   const navigate = useNavigate();
-  // const [hasNewRequest, setHasNewRequest] = useState(false);
 
-
-  console.log(hasNewRequest, "hasNewRequest")
   const handleLogout = async () => {
     try {
       await logoutApi();
@@ -25,26 +18,21 @@ const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
   };
 
   return (
-    <header className="bg-base-100 border-b border-base-300 fixed w-full top-0 z-40 backdrop-blur-md shadow-sm">
+    <header className="bg-base-100 shadow-md border-b border-base-200 sticky top-0 z-40 backdrop-blur-md">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Left - App Branding */}
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-all">
-          <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-primary" />
+        <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition-all">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center shadow-sm animate-pulse-slow">
+            <MessageCircle className="w-5 h-5 text-primary" />
           </div>
-          <span className="text-lg font-bold">Chatty</span>
+          <span className="text-xl font-bold tracking-wide text-primary">PingMe</span>
         </Link>
 
-        {/* Right - Actions */}
         <div className="flex items-center gap-4">
-
-          <Link to="/requests" className="text-zinc-500 hover:text-primary transition-colors">
-            <div className="relative">
-              <Bell className="w-5 h-5" />
-              {hasNewRequest && (
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
-              )}
-            </div>
+          <Link to="/requests" className="relative text-zinc-500 hover:text-primary transition-colors">
+            <Bell className="w-5 h-5" />
+            {hasNewRequest && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-base-100 animate-ping" />
+            )}
           </Link>
           <Link to="/settings" className="text-zinc-500 hover:text-primary transition-colors">
             <Settings className="w-5 h-5" />
@@ -52,8 +40,8 @@ const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
 
           {authUser && (
             <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="avatar">
-                <div className="w-8 rounded-full ring ring-base-300 ring-offset-base-100 ring-offset-2 cursor-pointer">
+              <div tabIndex={0} role="button" className="avatar hover:scale-105 transition-transform">
+                <div className="w-9 rounded-full ring-2 ring-primary/50 ring-offset-2 cursor-pointer">
                   <img
                     src={authUser.profilePic || "/avatar.png"}
                     alt="profile"
@@ -62,7 +50,7 @@ const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
               </div>
               <ul
                 tabIndex={0}
-                className="mt-3 p-2 shadow menu menu-sm dropdown-content bg-base-100 border border-base-300 rounded-lg w-40 z-50"
+                className="mt-3 p-2 shadow-lg menu menu-sm dropdown-content bg-base-100 border border-base-200 rounded-xl w-44 z-50"
               >
                 <li>
 

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Image, Send, X } from "lucide-react";
+import { Image, Send, X, Smile } from "lucide-react";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { getSocket } from "../lib/socket";
@@ -11,9 +11,9 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
   const typingTimeoutRef = useRef(null);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file?.type?.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error("Please select a valid image file.");
       return;
     }
 
@@ -33,13 +33,11 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
     const socket = getSocket();
     if (!socket || !authUser || !selectedUser) return;
 
-    // Emit typing event
     socket.emit("typing", {
       senderId: authUser._id,
       receiverId: selectedUser._id,
     });
 
-    // Debounce stopTyping after 1s of inactivity
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("stopTyping", {
@@ -72,61 +70,74 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
   };
 
   return (
-    <div className="p-4 w-full">
+<div className="w-full p-4 bg-base-100 shadow-inner rounded-b-xl">      
+      {/* Image Preview */}
       {imagePreview && (
         <div className="mb-3 flex items-center gap-2">
-          <div className="relative">
+          <div className="relative group">
             <img
               src={imagePreview}
               alt="Preview"
-              className="w-20 h-20 object-cover rounded-lg border border-zinc-700"
+              className="w-24 h-24 object-cover rounded-lg border border-zinc-300 shadow"
             />
             <button
               onClick={removeImage}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-base-300 flex items-center justify-center"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-zinc-700 hover:bg-zinc-200 border border-zinc-300 flex items-center justify-center"
               type="button"
             >
-              <X className="size-3" />
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-        <div className="flex-1 flex gap-2">
-          <input
-            type="text"
-            className="w-full input input-bordered rounded-lg input-sm sm:input-md"
-            placeholder="Type a message..."
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              handleTyping(); 
-            }}
-          />
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-          />
-          <button
-            type="button"
-            className={`hidden sm:flex btn btn-circle ${
-              imagePreview ? "text-emerald-500" : "text-zinc-400"
-            }`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Image size={20} />
-          </button>
-        </div>
+      {/* Message Input */}
+      <form
+        onSubmit={handleSendMessage}
+        className="flex items-center gap-2 bg-base-200 rounded-full px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/40 transition"
+      >
+        {/* Emoji Icon (Just for style now) */}
+        <button type="button" className="text-zinc-500 hover:text-primary">
+          <Smile size={20} />
+        </button>
+
+        {/* Input Field */}
+        <input
+          type="text"
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-400"
+          placeholder="Type your message..."
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            handleTyping();
+          }}
+        />
+
+        {/* Image Upload Button */}
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleImageChange}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className={`text-zinc-500 hover:text-emerald-500 ${imagePreview ? "text-emerald-500" : ""}`}
+        >
+          <Image size={20} />
+        </button>
+
+        {/* Send Button */}
         <button
           type="submit"
-          className="btn btn-sm btn-circle"
           disabled={!text.trim() && !imagePreview}
+          className={`p-1.5 rounded-full bg-primary text-white hover:bg-primary/90 transition ${
+            !text.trim() && !imagePreview ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
-          <Send size={22} />
+          <Send size={18} />
         </button>
       </form>
     </div>

@@ -61,7 +61,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
     const handleTyping = ({ senderId,receiverId }) => {
       console.log (senderId,"senderId")
       if (senderId === selectedUser._id) setIsTyping(true);
-          };
+    };
 
     const handleStopTyping = ({ senderId }) => {
       if (senderId === selectedUser._id) setIsTyping(false);
