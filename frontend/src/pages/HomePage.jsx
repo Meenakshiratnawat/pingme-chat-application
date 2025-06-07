@@ -37,6 +37,7 @@ const HomePage = ({ authUser, onlineUsers, setOnlineUsers }) => {
   useEffect(() => {
     const socket = getSocket();
     if (!authUser?._id || !socket) return;
+     socket.emit("join", authUser._id); 
 
     const handleContactAccepted = ({ contact }) => {
       if (!contact || !contact._id) {

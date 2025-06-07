@@ -20,8 +20,8 @@ export function getReceiverSocketId(userId) {
   return userSocketMap[userId];
 }
 
-// used to store online users
-const userSocketMap = {}; // {userId: socketId}
+// used to store online users// {userId: socketId}
+const userSocketMap = {};
 
 io.on("connection", (socket) => {
 
@@ -35,19 +35,20 @@ io.on("connection", (socket) => {
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
-socket.on("join", (userId) => {
-  socket.join(userId);
-  console.log(`👤 User ${userId} joined their room`);
-});
 
- socket.on("contact-request", ({ senderId, receiverId, senderName }) => {
-  console.log(`📨 Contact request from ${senderId} to ${receiverId}`);
-  io.to(receiverId).emit("contact-request-received", {
-    senderId,
-    senderName,
-    message: `${senderName} wants to add you as a contact.`,
+  socket.on("join", (userId) => {
+    socket.join(userId);
+    console.log(` User ${userId} joined their room`);
   });
-});
+
+  socket.on("contact-request", ({ senderId, receiverId, senderName }) => {
+    console.log(`📨 Contact request from ${senderId} to ${receiverId}`);
+    io.to(receiverId).emit("contact-request-received", {
+      senderId,
+      senderName,
+      message: `${senderName} wants to add you as a contact.`,
+    });
+  });
 
   socket.on("typing", ({ senderId, receiverId }) => {
     const receiverSocketId = getReceiverSocketId(receiverId);
@@ -102,34 +103,60 @@ socket.on("join", (userId) => {
     }
   });
 
+  socket.on("contact-accept", async ({ senderId, receiverId }) => {
+    try {
+      // Try to find and accept a pending connection
+      let connection = await Connection.findOneAndUpdate(
+        {
+          $or: [
+            { sender: senderId, receiver: receiverId, status: "pending" },
+            { sender: receiverId, receiver: senderId, status: "pending" },
+          ],
+        },
+        { status: "accepted" },
+        { new: true }
+      );
 
-socket.on("contact-accept", async ({ senderId, receiverId }) => {
-  try {
-    // Update DB
-    await Connection.findOneAndUpdate(
-      {
-        $or: [
-          { sender: senderId, receiver: receiverId },
-          { sender: receiverId, sender: senderId },
-        ],
-      },
-      { status: "accepted" }
-    );
+      // 🔄 If not pending, maybe already accepted?
+      if (!connection) {
+        connection = await Connection.findOne({
+          $or: [
+            { sender: senderId, receiver: receiverId, status: "accepted" },
+            { sender: receiverId, receiver: senderId, status: "accepted" },
+          ]
+        });
 
-const receiver = await User.findById(receiverId).select("-password");
-const sender = await User.findById(senderId).select("-password");
+        if (!connection) {
+          console.warn(" No pending or accepted connection found");
+          return;
+        }
 
-if (!receiver || !sender) {
-  console.warn("❌ Contact user not found");
-  return;
-}
+        console.warn("Connection already accepted, re-emitting contact-accepted");
+      }
 
-io.to(senderId).emit("contact-accepted", { contact: receiver });
-io.to(receiverId).emit("contact-accepted", { contact: sender });
-  } catch (err) {
-    console.error("❌ Error in contact-accept handler:", err);
-  }
-});
+      const actualSenderId = connection.sender.toString();
+      const actualReceiverId = connection.receiver.toString();
+
+      const [sender, receiver] = await Promise.all([
+        User.findById(actualSenderId).select("-password"),
+        User.findById(actualReceiverId).select("-password"),
+      ]);
+
+      if (!sender || !receiver) {
+        console.warn(" User not found");
+        return;
+      }
+
+      console.log("📤 Emitting contact-accepted to:", actualSenderId, actualReceiverId);
+
+      // ✅ Emit to both
+      io.to(actualSenderId).emit("contact-accepted", { contact: receiver });
+      io.to(actualReceiverId).emit("contact-accepted", { contact: sender });
+
+    } catch (err) {
+      console.error("Error in contact-accept handler:", err);
+    }
+  });
 });
 
 export { io, app, server };

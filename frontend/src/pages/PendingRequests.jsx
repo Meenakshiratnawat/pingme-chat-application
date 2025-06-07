@@ -41,9 +41,17 @@ const PendingRequests = ({ authUser }) => {
     }
   };
 
-  if (pendingRequests.length === 0) {
-    return <div className="p-6 text-center text-zinc-500">No pending requests</div>;
-  }
+if (pendingRequests.length === 0) {
+  return (
+    <div className="p-6 flex flex-col items-center justify-center text-zinc-500">
+      
+      <h3 className="text-xl font-semibold">You're all caught up!</h3>
+      <p className="text-sm mt-2 text-zinc-400">
+        No pending requests at the moment.
+      </p>
+    </div>
+  );
+}
 
   return (
     <div className="p-6 max-w-md mx-auto">

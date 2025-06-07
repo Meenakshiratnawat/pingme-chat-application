@@ -1,10 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { LogOut, MessageCircle, Settings, User, Bell } from "lucide-react";
 import toast from "react-hot-toast";
 import { logoutApi } from "../apiServices/AuthApi";
+import { axiosInstance } from "../lib/axios";
 
 const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
   const navigate = useNavigate();
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   const handleLogout = async () => {
     try {
@@ -14,6 +17,21 @@ const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
       navigate("/login");
     } catch (err) {
       toast.error(err.message);
+    }
+  };
+  
+  useEffect(() => {
+    if (authUser?._id) {
+      fetchPending();
+    }
+  }, [authUser?._id]);
+
+  const fetchPending = async () => {
+    try {
+      const res = await axiosInstance.get("/connections/pending");
+      setPendingRequests(res.data);
+    } catch (err) {
+      toast.error("Failed to load pending requests");
     }
   };
 
@@ -30,7 +48,7 @@ const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
         <div className="flex items-center gap-4">
           <Link to="/requests" className="relative text-zinc-500 hover:text-primary transition-colors">
             <Bell className="w-5 h-5" />
-            {hasNewRequest && (
+            {(hasNewRequest || pendingRequests.length > 0) && (
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-base-100 animate-ping" />
             )}
           </Link>
