@@ -4,9 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthImagePattern from "../components/AuthImagePattern";
-import { loginApi } from "../apiServices/AuthApi.js"; 
+import { loginApi } from "../apiServices/AuthApi"; 
 import { connectSocket } from "../lib/socket";
-
 
 const LoginPage = ({setAuthUser}) => {
   const [showPassword, setShowPassword] = useState(false);
