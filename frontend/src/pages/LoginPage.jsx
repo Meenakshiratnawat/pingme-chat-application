@@ -26,7 +26,7 @@ const handleSubmit = async (e) => {
   try {
     const user = await loginApi(formData);     // cookie is set by server
     setAuthUser(user);                         // store in useState
-    connectSocket(user._id);                   // ✅ initiate socket connection
+    connectSocket(user._id);                   // initiate socket connection
 
     toast.success("Logged in successfully");
     navigate("/");
