@@ -15,7 +15,7 @@
 🎃 **Authentication & Authorization:** Secure login with JWT-based authentication and protected routes  
 👾 **Realtime messaging:** Instant chat powered by Socket.IO with persistent WebSocket connections  
 
-🚀 **Core Realtime Features:**  
+**Core Realtime Features:**  
 - **Online user status:** Display live "online" indicators for active users  
 - **Who is typing:** Show typing indicators when the other user is typing  
 - **Message delivery in realtime:** New messages instantly delivered across all active clients  
