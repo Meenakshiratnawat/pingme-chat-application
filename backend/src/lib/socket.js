@@ -117,7 +117,7 @@ io.on("connection", (socket) => {
         { new: true }
       );
 
-      // 🔄 If not pending, maybe already accepted?
+      //  If not pending, maybe already accepted?
       if (!connection) {
         connection = await Connection.findOne({
           $or: [
@@ -147,9 +147,9 @@ io.on("connection", (socket) => {
         return;
       }
 
-      console.log("📤 Emitting contact-accepted to:", actualSenderId, actualReceiverId);
+      console.log(" Emitting contact-accepted to:", actualSenderId, actualReceiverId);
 
-      // ✅ Emit to both
+      //  Emit to both
       io.to(actualSenderId).emit("contact-accepted", { contact: receiver });
       io.to(actualReceiverId).emit("contact-accepted", { contact: sender });
 

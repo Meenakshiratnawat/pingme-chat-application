@@ -17,7 +17,7 @@ export const sendConnectionRequest = async (req, res) => {
       reverse.status = "accepted";
       await reverse.save();
 
-      // 🧼 Don't create duplicate; just update forward if exists
+      //  Don't create duplicate; just update forward if exists
       const forward = await Connection.findOne({
         sender: senderId,
         receiver: receiverId,
@@ -28,7 +28,7 @@ export const sendConnectionRequest = async (req, res) => {
         await forward.save();
       }
 
-      // ✅ Notify sender of acceptance
+      // Notify sender of acceptance
       const senderSocketId = getReceiverSocketId(senderId);
       if (senderSocketId) {
         io.to(senderSocketId).emit("contact-request-accepted", {
@@ -70,7 +70,7 @@ export const sendConnectionRequest = async (req, res) => {
 
     res.status(201).json({ message: "Contact request sent", connection: newConnection });
   } catch (error) {
-    console.error("❌ sendConnectionRequest error:", error);
+    console.error(" sendConnectionRequest error:", error);
     res.status(500).json({ message: "Failed to send contact request" });
   }
 };
@@ -105,7 +105,7 @@ const connection = await Connection.findOneAndUpdate(
 
     res.status(200).json({ message: "Request accepted", connection });
   } catch (error) {
-    console.error("❌ acceptConnectionRequest error:", error);
+    console.error(" acceptConnectionRequest error:", error);
     res.status(500).json({ message: "Failed to accept request" });
   }
 };
@@ -126,7 +126,7 @@ export const getAcceptedConnections = async (req, res) => {
 
     res.status(200).json(connectedUsers);
   } catch (err) {
-    console.error("❌ getAcceptedConnections error:", err);
+    console.error(" getAcceptedConnections error:", err);
     res.status(500).json({ message: "Failed to fetch contacts" });
   }
 };
@@ -141,7 +141,7 @@ export const getPendingRequests = async (req, res) => {
 
     res.status(200).json(pending);
   } catch (err) {
-    console.error("❌ getPendingRequests error:", err);
+    console.error(" getPendingRequests error:", err);
     res.status(500).json({ message: "Failed to fetch pending requests" });
   }
 };

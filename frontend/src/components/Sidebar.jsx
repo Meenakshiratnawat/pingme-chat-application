@@ -39,6 +39,7 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, contacts, authUse
       });
 
       toast.success(`Contact request sent to ${user.fullName}`);
+      setIsModalOpen(false)
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to send request");
     }
@@ -126,7 +127,7 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, contacts, authUse
                     className="w-10 h-10 rounded-full object-cover border border-base-300"
                   />
                   {isOnline && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full shadow animate-ping" />
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full " />
                   )}
                 </div>
                 <div className="hidden lg:block min-w-0">
@@ -146,8 +147,7 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, contacts, authUse
           className="w-full flex items-center justify-center gap-2 bg-primary text-white font-medium text-sm py-2 px-4 rounded-full shadow hover:bg-primary/90 transition-all"
           onClick={() => setIsModalOpen(true)}
         >
-          <Plus className="w-5 h-5" />
-          Add Buddy
+            Add +
         </button>
       </div>
 
@@ -178,7 +178,7 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, contacts, authUse
                       onClick={() => handleAddUser(user)}
                       disabled={alreadyAdded}
                     >
-                      {alreadyAdded ? "✅ Added" : "➕ Add"}
+                      {alreadyAdded ? "Added" : "➕ Add"}
                     </button>
                   </div>
                 );
@@ -186,7 +186,7 @@ const Sidebar = ({ selectedUser, setSelectedUser, onlineUsers, contacts, authUse
             </div>
             <div className="mt-4 text-right">
               <button className="btn btn-sm btn-outline" onClick={() => setIsModalOpen(false)}>
-                ❌ Close
+               Close
               </button>
             </div>
           </div>

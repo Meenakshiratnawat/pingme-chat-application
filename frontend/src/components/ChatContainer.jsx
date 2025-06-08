@@ -44,7 +44,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser, onlineUsers, authUser })
         setMessages((prev) => [...prev, newMessage]);
       }
 
-      // ✅ Re-emit chat-opened if you are the receiver
+      // Re-emit chat-opened if you are the receiver
       if (
         newMessage.senderId === selectedUser._id && // message from selected user
         newMessage.receiverId === authUser._id // you are the receiver

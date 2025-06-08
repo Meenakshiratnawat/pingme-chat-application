@@ -15,7 +15,7 @@ export const connectSocket = (userId, onOnlineUsers) => {
   });
 
   socket.on("connect", () => {
-    console.log("✅ Socket connected:", socket.id);
+    console.log("Socket connected:", socket.id);
           socket.emit("join", userId);
 
   });

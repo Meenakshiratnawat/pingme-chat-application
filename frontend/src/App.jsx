@@ -46,17 +46,52 @@ const App = () => {
   return (
     <>
       {/* <Navbar authUser={authUser} setAuthUser={setAuthUser} hasNewRequest={hasNewRequest} /> */}
-      <Routes>
-        <Route path="/" element={authUser ? (
-          <HomePage authUser={authUser} onlineUsers={onlineUsers} setOnlineUsers={setOnlineUsers} />
-        ) : <Navigate to="/login" />} />
+   <Routes>
+  <Route path="/login" element={<LoginPage setAuthUser={setAuthUser} />} />
+  <Route path="/signup" element={<SignUpPage setAuthUser={setAuthUser} />} />
 
-        <Route path="/login" element={!authUser ? <LoginPage setAuthUser={setAuthUser} /> : <Navigate to="/" />} />
-        <Route path="/signup" element={!authUser ? <SignUpPage setAuthUser={setAuthUser} /> : <Navigate to="/" />} />
-        <Route path="/profile" element={authUser ? <ProfilePage authUser={authUser} setAuthUser={setAuthUser} /> : <Navigate to="/login" />} />
-        <Route path="/settings" element={authUser ? <SettingsPage /> : <Navigate to="/login" />} />
-        <Route path="/requests" element={<PendingRequests authUser={authUser} />} />
-      </Routes>
+  <Route
+    path="/"
+    element={authUser ? (
+      <HomePage
+        authUser={authUser}
+        onlineUsers={onlineUsers}
+        setOnlineUsers={setOnlineUsers}
+      />
+    ) : (
+      <Navigate to="/login" replace />
+    )}
+  />
+
+  <Route
+    path="/profile"
+    element={
+      authUser ? (
+        <ProfilePage authUser={authUser} setAuthUser={setAuthUser} />
+      ) : (
+        <Navigate to="/login" replace />
+      )
+    }
+  />
+
+  <Route
+    path="/settings"
+    element={
+      authUser ? <SettingsPage /> : <Navigate to="/login" replace />
+    }
+  />
+
+  <Route
+    path="/requests"
+    element={
+      authUser ? (
+        <PendingRequests authUser={authUser} />
+      ) : (
+        <Navigate to="/login" replace />
+      )
+    }
+  />
+</Routes>
       <Toaster />
     </>
   );

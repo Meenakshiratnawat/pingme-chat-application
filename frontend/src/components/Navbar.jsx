@@ -15,16 +15,18 @@ const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
       setAuthUser(null);
       toast.success("Logged out");
       navigate("/login");
-    } catch (err) {
-      toast.error(err.message);
-    }
+     } catch (err) {
+       toast.error(err.message);
+     }
   };
   
-  useEffect(() => {
-    if (authUser?._id) {
-      fetchPending();
-    }
-  }, [authUser?._id]);
+useEffect(() => {
+  if (!authUser) {
+    console.log("authUser null — skipping fetchPending");
+    return;
+  }
+  fetchPending();
+}, [authUser?._id]);
 
   const fetchPending = async () => {
     try {

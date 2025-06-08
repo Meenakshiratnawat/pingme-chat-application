@@ -3,12 +3,14 @@ import { Image, Send, X, Smile } from "lucide-react";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { getSocket } from "../lib/socket";
+import EmojiPicker from "emoji-picker-react";
 
 const MessageInput = ({ authUser, selectedUser, setMessages }) => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -47,6 +49,11 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
     }, 1000);
   };
 
+  const handleEmojiClick = (emojiData, event) => {
+    setText((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false); // Auto-close picker when emoji is selected
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
@@ -70,7 +77,7 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
   };
 
   return (
-<div className="w-full p-4 bg-base-100 shadow-inner rounded-b-xl">      
+    <div className="w-full p-4 bg-base-100 shadow-inner rounded-b-xl relative">
       {/* Image Preview */}
       {imagePreview && (
         <div className="mb-3 flex items-center gap-2">
@@ -96,8 +103,12 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
         onSubmit={handleSendMessage}
         className="flex items-center gap-2 bg-base-200 rounded-full px-4 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/40 transition"
       >
-        {/* Emoji Icon (Just for style now) */}
-        <button type="button" className="text-zinc-500 hover:text-primary">
+        {/* Emoji Icon */}
+        <button
+          type="button"
+          onClick={() => setShowEmojiPicker((prev) => !prev)}
+          className="text-zinc-500 hover:text-primary relative"
+        >
           <Smile size={20} />
         </button>
 
@@ -140,6 +151,13 @@ const MessageInput = ({ authUser, selectedUser, setMessages }) => {
           <Send size={18} />
         </button>
       </form>
+
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <div className="absolute bottom-16 left-4 z-50">
+          <EmojiPicker onEmojiClick={handleEmojiClick} />
+        </div>
+      )}
     </div>
   );
 };
