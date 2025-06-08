@@ -27,12 +27,6 @@
 
 ---
 
-## App Screenshot
-
-![Chat App Screenshot](Screenshot%202025-06-08%20at%2010.42.55%20PM.png)
-
-*A glimpse of the realtime chat experience powered by Socket.IO.*  
-
 ---
 
 ## Introduction
