@@ -4,10 +4,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthImagePattern from "../components/AuthImagePattern";
-import { loginApi } from "../apiServices/AuthApi"; 
 import { connectSocket } from "../lib/socket";
+import { axiosInstance } from "../lib/axios"; // You still need axiosInstance for API calls
 
-const LoginPage = ({setAuthUser}) => {
+// Moved loginApi here
+const loginApi = async (data) => {
+  try {
+    const response = await axiosInstance.post("/auth/login", data);
+    return response.data; // user data
+  } catch (error) {
+    const message = error?.response?.data?.message || "Login failed";
+    throw new Error(message);
+  }
+};
+
+const LoginPage = ({ setAuthUser }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -16,26 +27,26 @@ const LoginPage = ({setAuthUser}) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!formData.email.trim()) return toast.error("Email is required");
-  if (!formData.password) return toast.error("Password is required");
+    if (!formData.email.trim()) return toast.error("Email is required");
+    if (!formData.password) return toast.error("Password is required");
 
-  setLoading(true);
-  try {
-    const user = await loginApi(formData);     // cookie is set by server
-    setAuthUser(user);                         // store in useState
-    connectSocket(user._id);                   // initiate socket connection
+    setLoading(true);
+    try {
+      const user = await loginApi(formData); // cookie is set by server
+      setAuthUser(user);                     // store in useState
+      connectSocket(user._id);               // initiate socket connection
 
-    toast.success("Logged in successfully");
-    navigate("/");
-  } catch (err) {
-    toast.error(err.message || "Login failed");
-  } finally {
-    setLoading(false);
-  }
-};
+      toast.success("Logged in successfully");
+      navigate("/");
+    } catch (err) {
+      toast.error(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="h-screen grid lg:grid-cols-2">
