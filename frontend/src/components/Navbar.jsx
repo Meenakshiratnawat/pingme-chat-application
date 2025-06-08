@@ -2,9 +2,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LogOut, MessageCircle, Settings, User, Bell } from "lucide-react";
 import toast from "react-hot-toast";
-import { logoutApi } from "../apiServices/AuthApi";
 import { axiosInstance } from "../lib/axios";
 
+export const logoutApi = async () => {
+  try {
+    await axiosInstance.post("/auth/logout");
+  } catch (error) {
+    const message = error?.response?.data?.message || "Logout failed";
+    throw new Error(message);
+  }
+};
 const Navbar = ({ authUser, setAuthUser, hasNewRequest }) => {
   const navigate = useNavigate();
   const [pendingRequests, setPendingRequests] = useState([]);
