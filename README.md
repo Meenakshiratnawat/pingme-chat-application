@@ -287,7 +287,7 @@ If you’re building a chat or realtime app → I can’t recommend Socket.IO en
 
 ---
 
-**GitHub Repo:** [Your Chat App Repo Link Here](https://github.com/your-repo-link)
+**GitHub Repo:** [ Chat App Repo Link Here](https://github.com/Meenakshiratnawat/fullstack-chat-app-master/tree/main)
 
 ---
 
