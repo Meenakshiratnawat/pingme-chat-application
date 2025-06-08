@@ -273,20 +273,19 @@ socket.on("disconnect", (reason) => {
 
 ## Final Thoughts
 
-Building our chat app with Socket.IO was an amazing learning experience.
-
-✅ Realtime messaging  
-✅ Online users  
-✅ Typing indicators  
-✅ Read receipts  
-✅ Contact requests  
+Building our chat app with Socket.IO was a fantastic learning journey.
+It enabled us to deliver a polished realtime experience with:
+	•	Instant messaging
+	•	Online presence
+	•	Typing indicators
+	•	Read receipts
+	•	Contact requests and notifications
 
 ...all powered by **a simple, clean Socket.IO architecture**.
 
 If you’re building a chat or realtime app → I can’t recommend Socket.IO enough.
 
 ---
-
 **GitHub Repo:** [ Chat App Repo Link Here](https://github.com/Meenakshiratnawat/fullstack-chat-app-master/tree/main)
 
 ---
