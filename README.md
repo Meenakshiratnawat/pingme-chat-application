@@ -244,8 +244,8 @@ socket.on("contact-request", ({ senderId, receiverId, senderName }) => {
 
 We implemented error handling at two levels:
 
-✅ **API errors** → caught in Axios interceptors, displayed via toast  
-✅ **Socket errors and disconnects:**
+**API errors** → caught in Axios interceptors, displayed via toast  
+**Socket errors and disconnects:**
 
 ```js
 socket.on("connect_error", (err) => {
