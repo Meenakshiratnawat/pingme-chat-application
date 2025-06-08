@@ -20,6 +20,8 @@
 - **Who is typing:** Show typing indicators when the other user is typing  
 - **Message delivery in realtime:** New messages instantly delivered across all active clients  
 - **Contact requests:** Realtime contact request system — send, receive, and accept contact requests with instant feedback  
+- **Contact request notifications:** When a contact request is sent, the target user receives an instant in-app notification via Socket.IO  
+- **Realtime contact acceptance:** When a contact request is accepted, both users immediately see each other added to their contacts — no refresh required  
 - **Read receipts:** Visual feedback showing if the recipient has read the message  
 🐞 **Robust error handling:** Implemented on both server and client sides to handle API errors, socket disconnects, and edge cases gracefully  
 
@@ -62,10 +64,10 @@ MongoDB  → For persisting messages, contacts, and user data
 
 We needed a solution that would:  
 
-✅ Provide **bidirectional realtime communication**  
-✅ Work reliably across browsers and network conditions  
-✅ Handle reconnections automatically  
-✅ Support an **event-driven API** → perfect for chat events like `newMessage`, `typing`, `messages-read`  
+ Provide **bidirectional realtime communication**  
+ Work reliably across browsers and network conditions  
+ Handle reconnections automatically  
+ Support an **event-driven API** → perfect for chat events like `newMessage`, `typing`, `messages-read`,`contact-accept`  
 
 Socket.IO gave us all of this — on top of WebSockets — with minimal setup.
 
