@@ -6,6 +6,8 @@
 
 **Try it out:** [Vercel](https://pingme-chat-application.onrender.com/)
 
+**Blog:** [Medium](https://medium.com/@meenakshiratnawat0/everything-you-need-to-know-about-socket-io-with-a-practical-chat-app-example-f779364827cc) 
+
 ---
 
 ## Highlights
