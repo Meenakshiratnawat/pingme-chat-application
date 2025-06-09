@@ -4,7 +4,7 @@
 
 # Building a Realtime Chat App with React, Node.js, and Socket.IO
 
-**Try it out:** [Vercel](https://github.com/Meenakshiratnawat/pingme-chat-application)
+**Try it out:** [Vercel](https://pingme-chat-application.onrender.com/)
 
 ---
 
@@ -80,3 +80,7 @@ npm run build
 ```shell
 npm start
 ```
+
+---
+
+Contact Me: [LinkedIn](https://www.linkedin.com/in/meenakshi-ratnawat-aa71771b2/)
